@@ -1,0 +1,124 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Prisma Postgres (Vercel Marketplace) gives one direct connection string —
+  // no separate pooled/direct split needed, so `directUrl` is unnecessary
+  // here. (A provider like Neon that DOES split pooled vs. direct would add
+  // `directUrl = env("DATABASE_URL_UNPOOLED")` back in for Prisma Migrate.)
+  url      = env("DATABASE_URL")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LEAVE
+  HOLIDAY
+}
+
+enum WorkerApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum WorkerSource {
+  ADMIN
+  SELF
+}
+
+model Organization {
+  id         String   @id @default(cuid())
+  name       String
+  slug       String   @unique
+  inviteCode String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  admin       AdminUser?
+  departments Department[]
+  workers     Worker[]
+  attendance  AttendanceRecord[]
+
+  @@map("organizations")
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  name         String   @default("Admin")
+  createdAt    DateTime @default(now())
+
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("admin_users")
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String
+  color     String   @default("#6366f1")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  workers Worker[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@map("departments")
+}
+
+model Worker {
+  id          String   @id @default(cuid())
+  name        String
+  designation String?
+  phone       String?
+  pinHash     String?
+  photoUrl    String?
+  joiningDate DateTime @default(now())
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  approvalStatus WorkerApprovalStatus @default(APPROVED)
+  source         WorkerSource         @default(ADMIN)
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  attendance AttendanceRecord[]
+
+  @@index([departmentId])
+  @@index([organizationId])
+  @@map("workers")
+}
+
+model AttendanceRecord {
+  id       String           @id @default(cuid())
+  date     DateTime
+  status   AttendanceStatus @default(PRESENT)
+  remarks  String?
+  markedAt DateTime         @default(now())
+
+  workerId String
+  worker   Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([workerId, date])
+  @@index([date])
+  @@index([organizationId])
+  @@map("attendance_records")
+}
