@@ -28,7 +28,9 @@ export default async function SignupPage() {
         style={{ backgroundImage: "var(--brand-gradient)" }}
       />
 
-      <div className="relative hidden flex-1 flex-col justify-between p-12 text-white lg:flex">
+      {/* `isolate` gives this panel its own stacking context — see the
+          matching comment in login/page.tsx for why it's needed. */}
+      <div className="relative isolate hidden flex-1 flex-col justify-between p-12 text-white lg:flex">
         <div className="absolute inset-0 -z-10 bg-gradient-brand" />
         <div className="absolute inset-0 -z-10 bg-black/10" />
 

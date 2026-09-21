@@ -34,7 +34,14 @@ export default async function LoginPage() {
       />
 
       {/* Left brand / hero panel */}
-      <div className="relative hidden flex-1 flex-col justify-between p-12 text-white lg:flex">
+      {/* `isolate` gives this panel its own stacking context — without it,
+          `position:relative` alone doesn't create one, so the -z-10
+          background divs below escape to the page's root stacking context
+          and lose to the "ambient background glow" divs and other content
+          instead of staying pinned behind this panel's own text. The
+          symptom: a washed-out panel with the vivid brand gradient barely
+          visible and white text nearly invisible against it. */}
+      <div className="relative isolate hidden flex-1 flex-col justify-between p-12 text-white lg:flex">
         <div className="absolute inset-0 -z-10 bg-gradient-brand" />
         <div className="absolute inset-0 -z-10 bg-black/10" />
 

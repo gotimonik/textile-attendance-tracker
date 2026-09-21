@@ -132,6 +132,10 @@
   }
   html {
     @apply font-sans;
+    /* Nudges every rem-based size up a bit at once (Tailwind's text-xs
+       through text-3xl, spacing that uses rem, etc. all scale with this)
+       instead of touching text-size classes across dozens of components. */
+    font-size: 106.25%;
     scroll-behavior: smooth;
   }
 }
