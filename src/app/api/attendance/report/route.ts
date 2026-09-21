@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { dateKeyToUTC, todayKey, addDaysToKey } from "@/lib/date";
 import { getOrgSession } from "@/lib/session";
+import { VERIFIED_ATTENDANCE_WHERE } from "@/lib/attendance-filter";
 
 export async function GET(request: NextRequest) {
   const org = await getOrgSession();
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     include: {
       department: true,
       attendance: {
-        where: { date: { gte: fromDate, lte: toDate } },
+        where: { date: { gte: fromDate, lte: toDate }, ...VERIFIED_ATTENDANCE_WHERE },
       },
     },
     orderBy: { name: "asc" },

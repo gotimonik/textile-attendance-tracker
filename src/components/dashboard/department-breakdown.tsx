@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export type DepartmentBreakdownRow = {
   id: string;
@@ -15,10 +16,11 @@ export type DepartmentBreakdownRow = {
 };
 
 export function DepartmentBreakdown({ rows }: { rows: DepartmentBreakdownRow[] }) {
+  const { t } = useTranslation();
   if (rows.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
-        No departments yet. Add one to see today&apos;s breakdown.
+        {t("dashboard.noDepartmentsYet")}
       </p>
     );
   }

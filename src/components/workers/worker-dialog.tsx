@@ -23,6 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { WorkerRow, DepartmentOption } from "@/components/workers/workers-view";
+import { IndianRupee } from "lucide-react";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 type DialogState = { mode: "create" } | { mode: "edit"; worker: WorkerRow } | null;
 
@@ -32,6 +34,7 @@ const emptyForm = {
   designation: "",
   phone: "",
   joiningDate: "",
+  monthlySalary: "",
 };
 
 export function WorkerDialog({
@@ -43,6 +46,7 @@ export function WorkerDialog({
   departments: DepartmentOption[];
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
@@ -56,6 +60,7 @@ export function WorkerDialog({
         designation: w.designation ?? "",
         phone: w.phone ?? "",
         joiningDate: w.joiningDate.slice(0, 10),
+        monthlySalary: w.monthlySalary != null ? String(w.monthlySalary) : "",
       });
     } else if (state?.mode === "create") {
       setForm({ ...emptyForm, departmentId: departments[0]?.id ?? "" });
@@ -78,21 +83,22 @@ export function WorkerDialog({
           designation: form.designation.trim() || null,
           phone: form.phone.trim() || null,
           joiningDate: form.joiningDate || undefined,
+          monthlySalary: form.monthlySalary.trim() === "" ? null : Number(form.monthlySalary),
         }),
       });
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || "Something went wrong");
+        toast.error(data.error || t("common.genericError"));
         setLoading(false);
         return;
       }
 
-      toast.success(isEdit ? "Worker updated" : "Worker added");
+      toast.success(isEdit ? t("workers.updateSuccess") : t("workers.addSuccess"));
       onOpenChange(false);
       router.refresh();
     } catch {
-      toast.error("Network error — please try again");
+      toast.error(t("common.networkError"));
     } finally {
       setLoading(false);
     }
@@ -104,21 +110,19 @@ export function WorkerDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="font-heading">
-              {state?.mode === "edit" ? "Edit worker" : "Add worker"}
+              {state?.mode === "edit" ? t("workers.dialogEditTitle") : t("workers.dialogAddTitle")}
             </DialogTitle>
             <DialogDescription>
-              {state?.mode === "edit"
-                ? "Update this worker's details."
-                : "Add a new worker to a department."}
+              {state?.mode === "edit" ? t("workers.dialogEditDesc") : t("workers.dialogAddDesc")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="worker-name">Full name</Label>
+              <Label htmlFor="worker-name">{t("workers.fullName")}</Label>
               <Input
                 id="worker-name"
-                placeholder="e.g. Ravi Sharma"
+                placeholder={t("workers.fullNamePlaceholder")}
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 autoFocus
@@ -127,13 +131,13 @@ export function WorkerDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="worker-department">Department</Label>
+              <Label htmlFor="worker-department">{t("workers.department")}</Label>
               <Select
                 value={form.departmentId}
                 onValueChange={(v) => setForm((f) => ({ ...f, departmentId: v }))}
               >
                 <SelectTrigger id="worker-department" className="w-full">
-                  <SelectValue placeholder="Select department" />
+                  <SelectValue placeholder={t("workers.selectDepartment")} />
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map((d) => (
@@ -153,19 +157,19 @@ export function WorkerDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="worker-designation">Designation</Label>
+                <Label htmlFor="worker-designation">{t("workers.designation")}</Label>
                 <Input
                   id="worker-designation"
-                  placeholder="Machine Operator"
+                  placeholder={t("workers.designationPlaceholder")}
                   value={form.designation}
                   onChange={(e) => setForm((f) => ({ ...f, designation: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="worker-phone">Phone</Label>
+                <Label htmlFor="worker-phone">{t("workers.phone")}</Label>
                 <Input
                   id="worker-phone"
-                  placeholder="9876543210"
+                  placeholder={t("workers.phonePlaceholder")}
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                 />
@@ -173,25 +177,41 @@ export function WorkerDialog({
             </div>
 
             <p className="text-xs text-muted-foreground">
-              {state?.mode === "edit"
-                ? "Use the … menu on this worker to set or reset their login PIN once a phone number is saved."
-                : "You can set a login PIN for this worker afterwards from the … menu."}
+              {state?.mode === "edit" ? t("workers.pinHintEdit") : t("workers.pinHintCreate")}
             </p>
 
-            <div className="space-y-2">
-              <Label htmlFor="worker-joining">Joining date</Label>
-              <Input
-                id="worker-joining"
-                type="date"
-                value={form.joiningDate}
-                onChange={(e) => setForm((f) => ({ ...f, joiningDate: e.target.value }))}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="worker-joining">{t("workers.joiningDate")}</Label>
+                <Input
+                  id="worker-joining"
+                  type="date"
+                  value={form.joiningDate}
+                  onChange={(e) => setForm((f) => ({ ...f, joiningDate: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="worker-salary">{t("workers.monthlySalary")}</Label>
+                <div className="relative">
+                  <IndianRupee className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="worker-salary"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder={t("workers.monthlySalaryPlaceholder")}
+                    className="pl-8"
+                    value={form.monthlySalary}
+                    onChange={(e) => setForm((f) => ({ ...f, monthlySalary: e.target.value }))}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
@@ -199,7 +219,7 @@ export function WorkerDialog({
               className="bg-gradient-brand text-white"
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {state?.mode === "edit" ? "Save changes" : "Add worker"}
+              {state?.mode === "edit" ? t("workers.saveChanges") : t("workers.addWorker")}
             </Button>
           </DialogFooter>
         </form>

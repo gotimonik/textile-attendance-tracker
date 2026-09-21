@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DepartmentDialog } from "@/components/departments/department-dialog";
 import { DeleteDepartmentDialog } from "@/components/departments/delete-department-dialog";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export type DepartmentRow = {
   id: string;
@@ -22,6 +23,7 @@ export type DepartmentRow = {
 };
 
 export function DepartmentsView({ initialDepartments }: { initialDepartments: DepartmentRow[] }) {
+  const { t } = useTranslation();
   const [dialogState, setDialogState] = useState<
     { mode: "create" } | { mode: "edit"; department: DepartmentRow } | null
   >(null);
@@ -32,10 +34,10 @@ export function DepartmentsView({ initialDepartments }: { initialDepartments: De
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">
-            Departments
+            {t("departments.title")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Organize your floor into departments and track headcount per team.
+            {t("departments.subtitle")}
           </p>
         </div>
         <Button
@@ -43,7 +45,7 @@ export function DepartmentsView({ initialDepartments }: { initialDepartments: De
           className="bg-gradient-brand text-white shadow-glow hover:opacity-95"
         >
           <Plus className="h-4 w-4" />
-          Add department
+          {t("departments.addDepartment")}
         </Button>
       </div>
 
@@ -54,14 +56,14 @@ export function DepartmentsView({ initialDepartments }: { initialDepartments: De
               <Building2 className="h-6 w-6 text-primary" />
             </span>
             <div>
-              <p className="font-medium">No departments yet</p>
+              <p className="font-medium">{t("departments.emptyTitle")}</p>
               <p className="text-sm text-muted-foreground">
-                Create your first department to start organizing workers.
+                {t("departments.emptyBody")}
               </p>
             </div>
             <Button onClick={() => setDialogState({ mode: "create" })} className="bg-gradient-brand text-white">
               <Plus className="h-4 w-4" />
-              Add department
+              {t("departments.addDepartment")}
             </Button>
           </CardContent>
         </Card>
@@ -88,7 +90,7 @@ export function DepartmentsView({ initialDepartments }: { initialDepartments: De
                       <p className="font-heading font-semibold">{dept.name}</p>
                       <p className="mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">
                         <Users className="h-3.5 w-3.5" />
-                        {dept.workerCount} worker{dept.workerCount === 1 ? "" : "s"}
+                        {t("departments.workerCount", { n: dept.workerCount })}
                       </p>
                     </div>
                   </div>
@@ -105,11 +107,11 @@ export function DepartmentsView({ initialDepartments }: { initialDepartments: De
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => setDialogState({ mode: "edit", department: dept })}>
                         <Pencil className="h-4 w-4" />
-                        Edit
+                        {t("common.edit")}
                       </DropdownMenuItem>
                       <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(dept)}>
                         <Trash2 className="h-4 w-4" />
-                        Delete
+                        {t("common.delete")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

@@ -4,6 +4,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { slugify, generateInviteCode } from "@/lib/org";
+import { getOrgSession } from "@/lib/session";
 
 const signupSchema = z.object({
   organizationName: z.string().trim().min(2, "Organization name must be at least 2 characters").max(80),
@@ -68,4 +69,41 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({ organization: { id: organization.id, name: organization.name } }, { status: 201 });
+}
+
+/** Admin-only: the signed-in admin's own organization settings. */
+export async function GET() {
+  const org = await getOrgSession();
+  if (!org) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: org.organizationId },
+    select: { name: true, slug: true, inviteCode: true, salaryDivisorDays: true },
+  });
+  if (!organization) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
+
+  return NextResponse.json({ organization });
+}
+
+const settingsSchema = z.object({
+  salaryDivisorDays: z.coerce.number().int().min(1).max(31).nullable(),
+});
+
+export async function PATCH(request: NextRequest) {
+  const org = await getOrgSession();
+  if (!org) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = await request.json().catch(() => null);
+  const parsed = settingsSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
+  }
+
+  const organization = await prisma.organization.update({
+    where: { id: org.organizationId },
+    data: { salaryDivisorDays: parsed.data.salaryDivisorDays },
+    select: { name: true, slug: true, inviteCode: true, salaryDivisorDays: true },
+  });
+
+  return NextResponse.json({ organization });
 }

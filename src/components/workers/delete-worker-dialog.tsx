@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { WorkerRow } from "@/components/workers/workers-view";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function DeleteWorkerDialog({
   worker,
@@ -23,6 +24,7 @@ export function DeleteWorkerDialog({
   worker: WorkerRow | null;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -32,11 +34,11 @@ export function DeleteWorkerDialog({
     try {
       const res = await fetch(`/api/workers/${worker.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
-      toast.success("Worker deleted");
+      toast.success(t("workers.deleteSuccess"));
       onOpenChange(false);
       router.refresh();
     } catch {
-      toast.error("Could not delete worker");
+      toast.error(t("workers.deleteError"));
     } finally {
       setLoading(false);
     }
@@ -46,15 +48,13 @@ export function DeleteWorkerDialog({
     <AlertDialog open={worker !== null} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete &ldquo;{worker?.name}&rdquo;?</AlertDialogTitle>
+          <AlertDialogTitle>{t("workers.deleteTitle", { name: worker?.name ?? "" })}</AlertDialogTitle>
           <AlertDialogDescription>
-            This permanently removes the worker and all of their attendance history. This action
-            cannot be undone. Consider marking them inactive instead if you may need this record
-            later.
+            {t("workers.deleteDesc")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{t("common.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
               e.preventDefault();
@@ -64,7 +64,7 @@ export function DeleteWorkerDialog({
             className="bg-destructive text-white hover:bg-destructive/90"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            Delete
+            {t("common.delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

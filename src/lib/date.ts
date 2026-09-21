@@ -50,3 +50,69 @@ export function formatDisplayDate(dateKey: string): string {
     timeZone: "UTC",
   });
 }
+
+/** YYYY-MM for the current month, in the browser's local timezone. */
+export function currentMonthKey(): string {
+  return todayKey().slice(0, 7);
+}
+
+export function monthKeyOf(dateKey: string): string {
+  return dateKey.slice(0, 7);
+}
+
+/** Number of calendar days in a "YYYY-MM" month key. */
+export function daysInMonthKey(monthKey: string): number {
+  const [y, m] = monthKey.split("-").map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
+/** First and last dateKey ("YYYY-MM-DD") of a "YYYY-MM" month key. */
+export function monthKeyRange(monthKey: string): { from: string; to: string } {
+  const [y, m] = monthKey.split("-").map(Number);
+  const last = daysInMonthKey(monthKey);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return { from: `${y}-${pad(m)}-01`, to: `${y}-${pad(m)}-${pad(last)}` };
+}
+
+export function addMonthsToKey(monthKey: string, delta: number): string {
+  const [y, m] = monthKey.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export function formatMonthLabel(monthKey: string): string {
+  const [y, m] = monthKey.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+}
+
+/** Single-letter weekday label ("M", "T", ...) for a dateKey — pure function of the key itself, not the viewer's clock, so it's safe to call during SSR. */
+export function weekdayShortOf(dateKey: string): string {
+  const d = dateKeyToUTC(dateKey);
+  return d.toLocaleDateString("en-US", { weekday: "narrow", timeZone: "UTC" });
+}
+
+/** All dateKeys ("YYYY-MM-DD") from `fromKey` to `toKey` inclusive. */
+export function dateKeysInRange(fromKey: string, toKey: string): string[] {
+  const keys: string[] = [];
+  let cursor = fromKey;
+  let guard = 0;
+  while (cursor <= toKey && guard < 400) {
+    keys.push(cursor);
+    cursor = addDaysToKey(cursor, 1);
+    guard++;
+  }
+  return keys;
+}
+
+/** All "YYYY-MM" month keys from `fromMonth` to `toMonth` inclusive, ascending. */
+export function monthKeysBetween(fromMonth: string, toMonth: string): string[] {
+  const keys: string[] = [];
+  let cursor = fromMonth;
+  let guard = 0;
+  while (cursor <= toMonth && guard < 600) {
+    keys.push(cursor);
+    cursor = addMonthsToKey(cursor, 1);
+    guard++;
+  }
+  return keys;
+}

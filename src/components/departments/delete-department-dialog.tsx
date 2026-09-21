@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { DepartmentRow } from "@/components/departments/departments-view";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function DeleteDepartmentDialog({
   department,
@@ -23,6 +24,7 @@ export function DeleteDepartmentDialog({
   department: DepartmentRow | null;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -34,16 +36,16 @@ export function DeleteDepartmentDialog({
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        toast.error(data.error || "Could not delete department");
+        toast.error(data.error || t("departments.deleteError"));
         setLoading(false);
         return;
       }
 
-      toast.success("Department deleted");
+      toast.success(t("departments.deleteSuccess"));
       onOpenChange(false);
       router.refresh();
     } catch {
-      toast.error("Network error — please try again");
+      toast.error(t("common.networkError"));
     } finally {
       setLoading(false);
     }
@@ -53,15 +55,15 @@ export function DeleteDepartmentDialog({
     <AlertDialog open={department !== null} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete &ldquo;{department?.name}&rdquo;?</AlertDialogTitle>
+          <AlertDialogTitle>{t("departments.deleteTitle", { name: department?.name ?? "" })}</AlertDialogTitle>
           <AlertDialogDescription>
             {department && department.workerCount > 0
-              ? `This department still has ${department.workerCount} worker(s). Move or remove them first.`
-              : "This action cannot be undone."}
+              ? t("departments.deleteDescHasWorkers", { n: department.workerCount })
+              : t("departments.deleteDescSafe")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={loading}>{t("common.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
               e.preventDefault();
@@ -71,7 +73,7 @@ export function DeleteDepartmentDialog({
             className="bg-destructive text-white hover:bg-destructive/90"
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            Delete
+            {t("common.delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { addDaysToKey, dateKeyToUTC, todayKey, utcToDateKey } from "@/lib/date";
+import { VERIFIED_ATTENDANCE_WHERE } from "@/lib/attendance-filter";
 
 export async function getAttendanceSummary(organizationId: string, days = 14) {
   const clampedDays = Math.min(Math.max(days, 1), 90);
@@ -22,7 +23,7 @@ export async function getAttendanceSummary(organizationId: string, days = 14) {
       },
     }),
     prisma.attendanceRecord.findMany({
-      where: { organizationId, date: { gte: fromDate, lte: toDate } },
+      where: { organizationId, date: { gte: fromDate, lte: toDate }, ...VERIFIED_ATTENDANCE_WHERE },
       include: { worker: { select: { departmentId: true, isActive: true } } },
     }),
   ]);

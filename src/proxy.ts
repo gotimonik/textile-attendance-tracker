@@ -4,7 +4,11 @@ import { getToken } from "next-auth/jwt";
 
 // Routes anyone can reach without being signed in at all.
 const PUBLIC_PAGE_PREFIXES = ["/login", "/signup", "/join"];
-const PUBLIC_API_PREFIXES = ["/api/auth", "/api/organizations", "/api/public"];
+// /api/locale is deliberately public — it has to work before anyone is
+// signed in (the login/signup/join pages need a language to render in), and
+// it does its own auth check internally to decide whether to also persist
+// the choice to a signed-in admin's or worker's profile.
+const PUBLIC_API_PREFIXES = ["/api/auth", "/api/organizations", "/api/public", "/api/locale"];
 
 // Routes that belong to the worker portal — require a "worker" role session,
 // distinct from the admin dashboard which requires an "admin" role session.

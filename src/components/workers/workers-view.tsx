@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -18,6 +18,7 @@ import {
   Link2,
   UserPlus,
   KeyRound,
+  MessageCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,7 @@ import { DepartmentBadge } from "@/components/department-badge";
 import { WorkerDialog } from "@/components/workers/worker-dialog";
 import { DeleteWorkerDialog } from "@/components/workers/delete-worker-dialog";
 import { PinDialog } from "@/components/workers/pin-dialog";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
 export type WorkerSource = "ADMIN" | "SELF";
@@ -63,6 +65,7 @@ export type WorkerRow = {
   approvalStatus: ApprovalStatus;
   source: WorkerSource;
   hasPin: boolean;
+  monthlySalary: number | null;
   department: { id: string; name: string; color: string };
 };
 
@@ -84,22 +87,34 @@ function InviteLinkCard({
   organizationName: string;
   joinPath: string;
 }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
-  const fullUrl = typeof window !== "undefined" && joinPath ? `${window.location.origin}${joinPath}` : joinPath;
+  // Starts null and is only filled in client-side after mount — reading
+  // window.location.origin during the initial render (client or server) would
+  // make the very first client render disagree with the server-rendered HTML
+  // (a relative joinPath has no origin to read), which is what a hydration
+  // mismatch is. Falling back to the relative joinPath keeps both renders
+  // identical until this effect patches in the absolute URL.
+  const [origin, setOrigin] = useState<string | null>(null);
+  useEffect(() => setOrigin(window.location.origin), []);
+  const fullUrl = origin && joinPath ? `${origin}${joinPath}` : joinPath;
 
   async function handleCopy() {
     if (!fullUrl) return;
     try {
       await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
-      toast.success("Invite link copied");
+      toast.success(t("workers.copiedToast"));
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Could not copy link");
+      toast.error(t("workers.copyError"));
     }
   }
 
   if (!joinPath) return null;
+
+  const whatsappText = `Join ${organizationName || "our workspace"} on the attendance app — sign up and log in here: ${fullUrl}`;
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
 
   return (
     <Card className="border-none bg-gradient-brand-soft py-0">
@@ -109,10 +124,9 @@ function InviteLinkCard({
             <Link2 className="h-4 w-4" />
           </span>
           <div>
-            <p className="text-sm font-medium">Worker self-registration link</p>
+            <p className="text-sm font-medium">{t("workers.inviteLinkTitle")}</p>
             <p className="text-xs text-muted-foreground">
-              Share this with your team so they can join {organizationName || "your workspace"} themselves
-              — new sign-ups need your approval before they count.
+              {t("workers.inviteLinkDesc", { org: organizationName || "your workspace" })}
             </p>
           </div>
         </div>
@@ -120,7 +134,13 @@ function InviteLinkCard({
           <Input readOnly value={fullUrl} className="bg-background/70 text-xs sm:w-64" onFocus={(e) => e.target.select()} />
           <Button size="sm" variant="outline" className="bg-background/70 shrink-0" onClick={handleCopy}>
             {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            Copy
+            {t("workers.copy")}
+          </Button>
+          <Button size="sm" variant="outline" className="bg-background/70 shrink-0" asChild>
+            <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{t("workers.whatsapp")}</span>
+            </a>
           </Button>
         </div>
       </CardContent>
@@ -139,6 +159,7 @@ export function WorkersView({
   joinPath?: string;
   organizationName?: string;
 }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("all");
@@ -185,10 +206,10 @@ export function WorkersView({
         body: JSON.stringify({ isActive: !worker.isActive }),
       });
       if (!res.ok) throw new Error();
-      toast.success(worker.isActive ? "Worker marked inactive" : "Worker marked active");
+      toast.success(worker.isActive ? t("workers.toggleActiveSuccessInactive") : t("workers.toggleActiveSuccessActive"));
       router.refresh();
     } catch {
-      toast.error("Could not update worker");
+      toast.error(t("workers.toggleActiveError"));
     }
   }
 
@@ -202,11 +223,13 @@ export function WorkersView({
       });
       if (!res.ok) throw new Error();
       toast.success(
-        approvalStatus === "APPROVED" ? `${worker.name} approved` : `${worker.name}'s request rejected`
+        approvalStatus === "APPROVED"
+          ? t("workers.approveSuccess", { name: worker.name })
+          : t("workers.rejectSuccess", { name: worker.name })
       );
       router.refresh();
     } catch {
-      toast.error("Could not update this request");
+      toast.error(t("workers.decideError"));
     } finally {
       setDecidingId(null);
     }
@@ -216,14 +239,11 @@ export function WorkersView({
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">Workers</h1>
+          <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">{t("workers.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            {decidedWorkers.filter((w) => w.isActive && w.approvalStatus === "APPROVED").length} active
-            worker
-            {decidedWorkers.filter((w) => w.isActive && w.approvalStatus === "APPROVED").length === 1
-              ? ""
-              : "s"}{" "}
-            across your floor.
+            {t("workers.activeWorkersSub", {
+              n: decidedWorkers.filter((w) => w.isActive && w.approvalStatus === "APPROVED").length,
+            })}
           </p>
         </div>
         <Button
@@ -232,7 +252,7 @@ export function WorkersView({
           className="bg-gradient-brand text-white shadow-glow hover:opacity-95"
         >
           <Plus className="h-4 w-4" />
-          Add worker
+          {t("workers.addWorker")}
         </Button>
       </div>
 
@@ -244,8 +264,7 @@ export function WorkersView({
             <div className="flex items-center gap-2">
               <UserPlus className="h-4 w-4 text-muted-foreground" />
               <p className="text-sm font-medium">
-                {pendingWorkers.length} self-registration{pendingWorkers.length === 1 ? "" : "s"} awaiting
-                approval
+                {t("workers.pendingSelfRegSub", { n: pendingWorkers.length })}
               </p>
             </div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -298,7 +317,7 @@ export function WorkersView({
       {departments.length === 0 && (
         <Card className="border-dashed">
           <CardContent className="py-6 text-center text-sm text-muted-foreground">
-            Create a department first, then add workers to it.
+            {t("workers.createDeptFirst")}
           </CardContent>
         </Card>
       )}
@@ -308,7 +327,7 @@ export function WorkersView({
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search by name, role or phone..."
+            placeholder={t("workers.searchPlaceholder")}
             className="pl-9"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -316,10 +335,10 @@ export function WorkersView({
         </div>
         <Select value={deptFilter} onValueChange={setDeptFilter}>
           <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Department" />
+            <SelectValue placeholder={t("workers.deptFilterPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All departments</SelectItem>
+            <SelectItem value="all">{t("workers.allDepartments")}</SelectItem>
             {departments.map((d) => (
               <SelectItem key={d.id} value={d.id}>
                 {d.name}
@@ -329,13 +348,13 @@ export function WorkersView({
         </Select>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-40">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={t("workers.statusFilterPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="active">{t("workers.statusActive")}</SelectItem>
+            <SelectItem value="inactive">{t("workers.statusInactive")}</SelectItem>
+            <SelectItem value="rejected">{t("workers.statusRejected")}</SelectItem>
+            <SelectItem value="all">{t("workers.statusAll")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -344,8 +363,8 @@ export function WorkersView({
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center gap-2 py-16 text-center">
             <Users2 className="h-8 w-8 text-muted-foreground" />
-            <p className="font-medium">No workers found</p>
-            <p className="text-sm text-muted-foreground">Try adjusting your filters or add a new worker.</p>
+            <p className="font-medium">{t("workers.noWorkersFound")}</p>
+            <p className="text-sm text-muted-foreground">{t("workers.adjustFilters")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -355,10 +374,10 @@ export function WorkersView({
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead>Worker</TableHead>
-                  <TableHead>Department</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t("workers.colWorker")}</TableHead>
+                  <TableHead>{t("workers.colDepartment")}</TableHead>
+                  <TableHead>{t("workers.colContact")}</TableHead>
+                  <TableHead>{t("workers.colStatus")}</TableHead>
                   <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
@@ -383,7 +402,7 @@ export function WorkersView({
                                 variant="outline"
                                 className="border-transparent bg-muted px-1.5 py-0 text-[10px] font-medium text-muted-foreground"
                               >
-                                Self sign-up
+                                {t("workers.selfSignUp")}
                               </Badge>
                             )}
                           </p>
@@ -406,7 +425,7 @@ export function WorkersView({
                       )}
                       {w.hasPin && (
                         <span className="mt-1 flex items-center gap-1 text-xs text-muted-foreground/80">
-                          <KeyRound className="h-3 w-3" /> Login enabled
+                          <KeyRound className="h-3 w-3" /> {t("workers.loginEnabled")}
                         </span>
                       )}
                     </TableCell>
@@ -416,7 +435,7 @@ export function WorkersView({
                           variant="outline"
                           className="border-transparent bg-destructive/10 text-destructive"
                         >
-                          Rejected
+                          {t("workers.statusRejected")}
                         </Badge>
                       ) : (
                         <Badge
@@ -427,7 +446,7 @@ export function WorkersView({
                               : "border-transparent bg-muted text-muted-foreground"
                           }
                         >
-                          {w.isActive ? "Active" : "Inactive"}
+                          {w.isActive ? t("workers.statusActive") : t("workers.statusInactive")}
                         </Badge>
                       )}
                     </TableCell>
@@ -441,19 +460,19 @@ export function WorkersView({
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => setDialogState({ mode: "edit", worker: w })}>
                             <Pencil className="h-4 w-4" />
-                            Edit
+                            {t("common.edit")}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setPinTarget(w)}>
                             <KeyRound className="h-4 w-4" />
-                            {w.hasPin ? "Reset login PIN" : "Set login PIN"}
+                            {w.hasPin ? t("workers.resetPin") : t("workers.setPin")}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => toggleActive(w)}>
                             <Power className="h-4 w-4" />
-                            {w.isActive ? "Mark inactive" : "Mark active"}
+                            {w.isActive ? t("workers.markInactive") : t("workers.markActive")}
                           </DropdownMenuItem>
                           <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(w)}>
                             <Trash2 className="h-4 w-4" />
-                            Delete
+                            {t("common.delete")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -486,7 +505,7 @@ export function WorkersView({
                             variant="outline"
                             className="border-transparent bg-muted px-1.5 py-0 text-[10px] font-medium text-muted-foreground"
                           >
-                            Self sign-up
+                            {t("workers.selfSignUp")}
                           </Badge>
                         )}
                       </p>
@@ -501,7 +520,7 @@ export function WorkersView({
                       )}
                       {w.hasPin && (
                         <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground/80">
-                          <KeyRound className="h-3 w-3" /> Login enabled
+                          <KeyRound className="h-3 w-3" /> {t("workers.loginEnabled")}
                         </p>
                       )}
                     </div>
@@ -515,19 +534,19 @@ export function WorkersView({
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => setDialogState({ mode: "edit", worker: w })}>
                         <Pencil className="h-4 w-4" />
-                        Edit
+                        {t("common.edit")}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => setPinTarget(w)}>
                         <KeyRound className="h-4 w-4" />
-                        {w.hasPin ? "Reset login PIN" : "Set login PIN"}
+                        {w.hasPin ? t("workers.resetPin") : t("workers.setPin")}
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => toggleActive(w)}>
                         <Power className="h-4 w-4" />
-                        {w.isActive ? "Mark inactive" : "Mark active"}
+                        {w.isActive ? t("workers.markInactive") : t("workers.markActive")}
                       </DropdownMenuItem>
                       <DropdownMenuItem variant="destructive" onClick={() => setDeleteTarget(w)}>
                         <Trash2 className="h-4 w-4" />
-                        Delete
+                        {t("common.delete")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

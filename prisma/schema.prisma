@@ -30,6 +30,15 @@ enum WorkerSource {
   SELF
 }
 
+// A worker's own self-marked attendance starts PENDING and stays excluded from
+// stats, reports and salary until a manager reviews it. Admin-marked records
+// never get a verificationStatus at all (null = trusted immediately).
+enum AttendanceVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model Organization {
   id         String   @id @default(cuid())
   name       String
@@ -38,10 +47,18 @@ model Organization {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  admin       AdminUser?
-  departments Department[]
-  workers     Worker[]
-  attendance  AttendanceRecord[]
+  // Days used as the salary divisor for every month (monthlySalary / salaryDivisorDays
+  // = one day's pay). Null means "use the actual calendar days in that month" instead
+  // of a fixed number.
+  salaryDivisorDays Int?
+
+  admin             AdminUser?
+  departments       Department[]
+  workers           Worker[]
+  attendance        AttendanceRecord[]
+  salaryAdjustments SalaryAdjustment[]
+  salaryPayments    SalaryPayment[]
+  paidLeaveGrants   PaidLeaveGrant[]
 
   @@map("organizations")
 }
@@ -52,6 +69,9 @@ model AdminUser {
   passwordHash String
   name         String   @default("Admin")
   createdAt    DateTime @default(now())
+
+  // "en" | "hi" | "gu" — the admin's own UI language, remembered across devices.
+  locale String @default("en")
 
   organizationId String       @unique
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -91,13 +111,23 @@ model Worker {
   approvalStatus WorkerApprovalStatus @default(APPROVED)
   source         WorkerSource         @default(ADMIN)
 
+  // "en" | "hi" | "gu" — the worker's own UI language, remembered across
+  // devices so it follows them whenever they log in.
+  locale String @default("en")
+
+  // Optional — salary tracking is opt-in per worker. Null means "not tracked."
+  monthlySalary Float?
+
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
 
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  attendance AttendanceRecord[]
+  attendance        AttendanceRecord[]
+  salaryAdjustments SalaryAdjustment[]
+  salaryPayments    SalaryPayment[]
+  paidLeaveGrants   PaidLeaveGrant[]
 
   @@index([departmentId])
   @@index([organizationId])
@@ -111,6 +141,13 @@ model AttendanceRecord {
   remarks  String?
   markedAt DateTime         @default(now())
 
+  // true when the worker submitted this themselves (vs. an admin marking it).
+  // Self-marked records start out PENDING and are excluded from stats, reports
+  // and salary until a manager approves them; admin-marked records always keep
+  // verificationStatus null (trusted immediately, no review needed).
+  markedBySelf       Boolean                       @default(false)
+  verificationStatus AttendanceVerificationStatus?
+
   workerId String
   worker   Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
 
@@ -120,5 +157,69 @@ model AttendanceRecord {
   @@unique([workerId, date])
   @@index([date])
   @@index([organizationId])
+  @@index([organizationId, verificationStatus])
   @@map("attendance_records")
+}
+
+// A manual pay adjustment for one worker in one payroll month — a bonus
+// (positive amount) or a cut/deduction (negative amount), on top of the
+// automatic attendance-based calculation.
+model SalaryAdjustment {
+  id        String   @id @default(cuid())
+  amount    Float
+  reason    String?
+  month     String // "YYYY-MM" — the payroll month this adjustment applies to
+  createdAt DateTime @default(now())
+
+  workerId String
+  worker   Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([workerId, month])
+  @@index([organizationId, month])
+  @@map("salary_adjustments")
+}
+
+// Records that a worker's payroll for a given month has actually been paid out,
+// and for how much (admin-entered — usually the auto-calculated net salary, but
+// can be overridden). One row per worker per month; its absence means that
+// month is not yet marked paid.
+model SalaryPayment {
+  id     String   @id @default(cuid())
+  amount Float
+  note   String?
+  month  String // "YYYY-MM"
+  paidAt DateTime @default(now())
+
+  workerId String
+  worker   Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([workerId, month])
+  @@index([organizationId, month])
+  @@map("salary_payments")
+}
+
+// How many Leave days are paid for one worker in one specific month. No row
+// means 0 paid leaves that month — nothing is paid by default. Admins grant
+// paid leave explicitly: to selected workers, or to everyone at once, for the
+// month they're looking at.
+model PaidLeaveGrant {
+  id    String @id @default(cuid())
+  month String // "YYYY-MM"
+  quota Int
+
+  workerId String
+  worker   Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([workerId, month])
+  @@index([organizationId, month])
+  @@map("paid_leave_grants")
 }

@@ -13,6 +13,7 @@ export const workerSelect = {
   approvalStatus: true,
   source: true,
   pinHash: true,
+  monthlySalary: true,
   department: true,
 } satisfies Prisma.WorkerSelect;
 

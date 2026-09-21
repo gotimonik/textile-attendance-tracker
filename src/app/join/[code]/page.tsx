@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { RegisterWorkerForm } from "@/components/register-worker-form";
 import { Shirt } from "lucide-react";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 
 export default async function JoinPage({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
@@ -22,6 +23,9 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
 
   return (
     <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-background p-6">
+      <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-6">
+        <LanguageSwitcher variant="outline" />
+      </div>
       <div
         aria-hidden
         className="pointer-events-none absolute -top-40 -left-40 h-[32rem] w-[32rem] rounded-full opacity-25 blur-3xl"

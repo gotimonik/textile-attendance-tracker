@@ -1,10 +1,26 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { LoginForm } from "@/components/login-form";
 import { Shirt, Sparkles, Scissors, Palette } from "lucide-react";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale } from "@/lib/i18n/config";
+import { translate } from "@/lib/i18n/translate";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  // Server Component, so it resolves the cookie-based locale directly rather
+  // than the useTranslation() hook (that needs a client-side React context).
+  // translate() is imported from the plain (non "use client") module so it
+  // can be called directly from a Server Component.
+  const cookieStore = await cookies();
+  const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value;
+  const locale = isLocale(cookieLocale) ? cookieLocale : DEFAULT_LOCALE;
+  const t = (key: string) => translate(locale, key);
+
   return (
     <div className="relative flex min-h-screen w-full overflow-hidden bg-background">
+      <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-6">
+        <LanguageSwitcher variant="outline" />
+      </div>
       {/* Ambient background glow */}
       <div
         aria-hidden
@@ -30,18 +46,13 @@ export default function LoginPage() {
         </div>
 
         <div className="max-w-md space-y-6">
-          <h1 className="font-heading text-4xl font-extrabold leading-tight tracking-tight">
-            Attendance, tailored for the shop floor.
-          </h1>
-          <p className="text-base text-white/85">
-            Track every embroidery, cutting, stitching and finishing worker&mdash;by
-            department, by day&mdash;without the paper registers.
-          </p>
+          <h1 className="font-heading text-4xl font-extrabold leading-tight tracking-tight">{t("auth.heroTitle")}</h1>
+          <p className="text-base text-white/85">{t("auth.heroBody")}</p>
           <div className="flex flex-wrap gap-3 pt-2">
             {[
-              { icon: Scissors, label: "Cutting" },
-              { icon: Sparkles, label: "Embroidery" },
-              { icon: Palette, label: "Dyeing" },
+              { icon: Scissors, label: t("auth.tagCutting") },
+              { icon: Sparkles, label: t("auth.tagEmbroidery") },
+              { icon: Palette, label: t("auth.tagDyeing") },
             ].map(({ icon: Icon, label }) => (
               <span
                 key={label}
@@ -55,7 +66,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-xs text-white/60">
-          &copy; {new Date().getFullYear()} ThreadTrack. Built for textile &amp; embroidery units.
+          &copy; {new Date().getFullYear()} ThreadTrack. {t("auth.heroFooter")}
         </p>
       </div>
 

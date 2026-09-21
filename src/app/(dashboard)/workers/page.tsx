@@ -36,6 +36,7 @@ export default async function WorkersPage() {
     approvalStatus: w.approvalStatus,
     source: w.source,
     hasPin: w.pinHash !== null,
+    monthlySalary: w.monthlySalary,
     department: { id: w.department.id, name: w.department.name, color: w.department.color },
   }));
 

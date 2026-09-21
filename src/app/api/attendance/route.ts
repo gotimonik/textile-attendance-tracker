@@ -39,6 +39,10 @@ export async function GET(request: NextRequest) {
       name: w.name,
       designation: w.designation,
       status: w.attendance[0]?.status ?? null,
+      // Surfaced so the marking UI can flag a worker's own pending self-mark —
+      // it's shown here for review, but doesn't count anywhere until an admin
+      // action (like Save on this screen) confirms it.
+      pending: w.attendance[0]?.verificationStatus === "PENDING",
     })),
   }));
 
@@ -79,16 +83,21 @@ export async function POST(request: NextRequest) {
 
   const date = dateKeyToUTC(parsed.data.date);
 
+  // An admin saving this screen is itself the confirmation — clear any pending
+  // self-mark state so the record counts immediately, without a separate trip
+  // through the Pending tab.
   await prisma.$transaction(
     parsed.data.records.map((r) =>
       prisma.attendanceRecord.upsert({
         where: { workerId_date: { workerId: r.workerId, date } },
-        update: { status: r.status as AttendanceStatus, markedAt: new Date() },
+        update: { status: r.status as AttendanceStatus, markedAt: new Date(), markedBySelf: false, verificationStatus: null },
         create: {
           workerId: r.workerId,
           date,
           status: r.status as AttendanceStatus,
           organizationId: org.organizationId,
+          markedBySelf: false,
+          verificationStatus: null,
         },
       })
     )

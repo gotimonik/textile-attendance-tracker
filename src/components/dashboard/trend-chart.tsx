@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { STATUS_COLORS, CHART_CHROME } from "@/lib/colors";
 import { formatDisplayDate } from "@/lib/date";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export type TrendPoint = {
   date: string;
@@ -32,6 +33,7 @@ function shortDate(dateKey: string) {
 }
 
 export function TrendChart({ data }: { data: TrendPoint[] }) {
+  const { t } = useTranslation();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const chrome = {
@@ -50,7 +52,7 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
 
   return (
     <ResponsiveContainer width="100%" height={280}>
-      <BarChart data={chartData} margin={{ top: 4, right: 8, left: -16, bottom: 0 }} barCategoryGap={4}>
+      <BarChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barCategoryGap={4}>
         <CartesianGrid strokeDasharray="3 3" stroke={chrome.grid} vertical={false} />
         <XAxis
           dataKey="label"
@@ -74,10 +76,10 @@ export function TrendChart({ data }: { data: TrendPoint[] }) {
           }}
         />
         <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" iconSize={8} />
-        <Bar dataKey="present" name="Present" stackId="a" fill={STATUS_COLORS.PRESENT} radius={[0, 0, 0, 0]} />
-        <Bar dataKey="halfDay" name="Half Day" stackId="a" fill={STATUS_COLORS.HALF_DAY} />
-        <Bar dataKey="leave" name="On Leave" stackId="a" fill={STATUS_COLORS.LEAVE} />
-        <Bar dataKey="absent" name="Absent" stackId="a" fill={STATUS_COLORS.ABSENT} radius={[3, 3, 0, 0]} />
+        <Bar dataKey="present" name={t("status.PRESENT")} stackId="a" fill={STATUS_COLORS.PRESENT} radius={[0, 0, 0, 0]} />
+        <Bar dataKey="halfDay" name={t("status.HALF_DAY")} stackId="a" fill={STATUS_COLORS.HALF_DAY} />
+        <Bar dataKey="leave" name={t("status.LEAVE")} stackId="a" fill={STATUS_COLORS.LEAVE} />
+        <Bar dataKey="absent" name={t("status.ABSENT")} stackId="a" fill={STATUS_COLORS.ABSENT} radius={[3, 3, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

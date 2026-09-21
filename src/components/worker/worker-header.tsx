@@ -3,6 +3,8 @@
 import { signOut } from "next-auth/react";
 import { LogOut, Shirt } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function WorkerHeader({
   workerName,
@@ -13,6 +15,7 @@ export function WorkerHeader({
   departmentName: string;
   organizationName: string;
 }) {
+  const { t } = useTranslation();
   return (
     <header className="sticky top-0 z-20 border-b border-border/70 bg-background/80 px-4 py-3 backdrop-blur-md sm:px-6">
       <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3">
@@ -27,15 +30,18 @@ export function WorkerHeader({
             </p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="shrink-0 text-muted-foreground"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-        >
-          <LogOut className="h-4 w-4" />
-          Sign out
-        </Button>
+        <div className="flex shrink-0 items-center gap-1">
+          <LanguageSwitcher />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">{t("common.signOut")}</span>
+          </Button>
+        </div>
       </div>
     </header>
   );

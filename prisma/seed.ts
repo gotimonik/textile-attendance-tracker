@@ -140,6 +140,7 @@ async function seedOrganization(config: OrgConfig) {
           organizationId: organization.id,
           approvalStatus: "APPROVED",
           source: "ADMIN",
+          monthlySalary: Math.random() > 0.15 ? 8000 + Math.floor(Math.random() * 9) * 1000 : null,
         },
       });
       workers.push(worker);

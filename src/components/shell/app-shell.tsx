@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Shirt } from "lucide-react";
 import { SidebarNav } from "@/components/shell/sidebar-nav";
@@ -5,8 +7,11 @@ import { MobileNav } from "@/components/shell/mobile-nav";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { UserMenu } from "@/components/shell/user-menu";
 import { PageTransition } from "@/components/shell/page-transition";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-screen w-full bg-background">
       {/* Desktop sidebar */}
@@ -22,11 +27,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
         <div className="border-t border-sidebar-border/60 p-4">
           <div className="rounded-xl bg-gradient-brand-soft p-3 text-xs text-sidebar-foreground/70">
-            <p className="font-medium text-sidebar-foreground">Tip</p>
-            <p className="mt-1">
-              Use the Attendance page each morning to mark the whole floor in under a
-              minute.
-            </p>
+            <p className="font-medium text-sidebar-foreground">{t("nav.sidebarTipTitle")}</p>
+            <p className="mt-1">{t("nav.sidebarTipBody")}</p>
           </div>
         </div>
       </aside>
@@ -44,6 +46,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-3">
+            <LanguageSwitcher />
             <ThemeToggle />
             <UserMenu />
           </div>

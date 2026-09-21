@@ -15,6 +15,7 @@ const updateSchema = z.object({
   isActive: z.boolean().optional(),
   approvalStatus: z.enum(["PENDING", "APPROVED", "REJECTED"]).optional(),
   pin: z.union([z.string().regex(PIN_PATTERN, "PIN must be 4 to 6 digits"), z.null()]).optional(),
+  monthlySalary: z.coerce.number().nonnegative().nullable().optional(),
 });
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

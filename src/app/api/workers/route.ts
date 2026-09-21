@@ -47,6 +47,7 @@ const createSchema = z.object({
   phone: z.string().trim().max(20).optional().or(z.literal("")),
   pin: z.string().regex(PIN_PATTERN, "PIN must be 4 to 6 digits").optional().or(z.literal("")),
   joiningDate: z.string().optional(),
+  monthlySalary: z.coerce.number().nonnegative().nullable().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -93,6 +94,7 @@ export async function POST(request: NextRequest) {
       phone,
       pinHash: parsed.data.pin ? await hashPin(parsed.data.pin) : null,
       joiningDate: parsed.data.joiningDate ? new Date(parsed.data.joiningDate) : new Date(),
+      monthlySalary: parsed.data.monthlySalary ?? null,
       approvalStatus: "APPROVED",
       source: "ADMIN",
     },

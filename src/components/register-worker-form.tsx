@@ -22,6 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 type DepartmentOption = { id: string; name: string; color: string };
 
@@ -34,6 +35,7 @@ export function RegisterWorkerForm({
   organizationName: string;
   departments: DepartmentOption[];
 }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState({
     name: "",
     departmentId: departments[0]?.id ?? "",
@@ -49,11 +51,11 @@ export function RegisterWorkerForm({
     e.preventDefault();
 
     if (form.pin !== form.confirmPin) {
-      toast.error("PINs don't match");
+      toast.error(t("join.errPinsMismatch"));
       return;
     }
     if (!/^\d{4,6}$/.test(form.pin)) {
-      toast.error("PIN must be 4 to 6 digits");
+      toast.error(t("join.errPinLength"));
       return;
     }
 
@@ -73,14 +75,14 @@ export function RegisterWorkerForm({
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || "Something went wrong");
+        toast.error(data.error || t("join.errGeneric"));
         setLoading(false);
         return;
       }
 
       setSubmitted(true);
     } catch {
-      toast.error("Network error — please try again");
+      toast.error(t("join.errNetwork"));
     } finally {
       setLoading(false);
     }
@@ -94,17 +96,15 @@ export function RegisterWorkerForm({
             <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[color-mix(in_oklab,#0ca30c_15%,transparent)] text-[#0ca30c]">
               <CheckCircle2 className="h-7 w-7" />
             </span>
-            <h2 className="font-heading text-xl font-bold">Registration submitted</h2>
+            <h2 className="font-heading text-xl font-bold">{t("join.registrationSubmitted")}</h2>
             <p className="text-sm text-muted-foreground">
-              Thanks, <span className="font-medium text-foreground">{form.name}</span>! Your
-              registration to <span className="font-medium text-foreground">{organizationName}</span>{" "}
-              is waiting for admin approval. Once approved, sign in with your phone number and PIN.
+              {t("join.registrationSubmittedBody", { name: form.name, org: organizationName })}
             </p>
             <Link
               href={`/join/${code}/login`}
               className="mt-2 text-sm font-medium text-foreground underline underline-offset-2"
             >
-              Go to worker sign-in
+              {t("join.goToSignIn")}
             </Link>
           </CardContent>
         </Card>
@@ -116,7 +116,7 @@ export function RegisterWorkerForm({
     return (
       <Card className="glass-card shadow-glow border-none py-0 shadow-xl">
         <CardContent className="py-10 text-center text-sm text-muted-foreground">
-          {organizationName} hasn&apos;t set up any departments yet. Please check back later.
+          {t("join.noDepartments", { org: organizationName })}
         </CardContent>
       </Card>
     );
@@ -126,18 +126,18 @@ export function RegisterWorkerForm({
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
       <Card className="glass-card shadow-glow border-none py-0 shadow-xl">
         <CardHeader className="pt-8">
-          <CardTitle className="font-heading text-2xl">Join {organizationName}</CardTitle>
-          <CardDescription>Register yourself as a worker — an admin will review and approve you.</CardDescription>
+          <CardTitle className="font-heading text-2xl">{t("join.registerTitle", { org: organizationName })}</CardTitle>
+          <CardDescription>{t("join.registerSubtitle")}</CardDescription>
         </CardHeader>
         <CardContent className="pb-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full name</Label>
+              <Label htmlFor="name">{t("join.fullName")}</Label>
               <div className="relative">
                 <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="name"
-                  placeholder="e.g. Ravi Sharma"
+                  placeholder={t("join.fullNamePlaceholder")}
                   className="pl-9"
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -147,13 +147,13 @@ export function RegisterWorkerForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="department">Department</Label>
+              <Label htmlFor="department">{t("join.department")}</Label>
               <Select
                 value={form.departmentId}
                 onValueChange={(v) => setForm((f) => ({ ...f, departmentId: v }))}
               >
                 <SelectTrigger id="department" className="w-full">
-                  <SelectValue placeholder="Select department" />
+                  <SelectValue placeholder={t("join.selectDepartment")} />
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map((d) => (
@@ -169,12 +169,12 @@ export function RegisterWorkerForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="designation">Role / designation (optional)</Label>
+              <Label htmlFor="designation">{t("join.designation")}</Label>
               <div className="relative">
                 <Briefcase className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="designation"
-                  placeholder="e.g. Machine Operator"
+                  placeholder={t("join.designationPlaceholder")}
                   className="pl-9"
                   value={form.designation}
                   onChange={(e) => setForm((f) => ({ ...f, designation: e.target.value }))}
@@ -183,7 +183,7 @@ export function RegisterWorkerForm({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone number</Label>
+              <Label htmlFor="phone">{t("join.phoneNumber")}</Label>
               <div className="relative">
                 <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -195,21 +195,19 @@ export function RegisterWorkerForm({
                   required
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                You&apos;ll use this to sign in once you&apos;re approved.
-              </p>
+              <p className="text-xs text-muted-foreground">{t("join.phoneHint")}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="pin">Create a PIN</Label>
+                <Label htmlFor="pin">{t("join.createPin")}</Label>
                 <div className="relative">
                   <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="pin"
                     type="password"
                     inputMode="numeric"
-                    placeholder="4-6 digits"
+                    placeholder={t("join.pinPlaceholder")}
                     className="pl-9"
                     value={form.pin}
                     onChange={(e) => setForm((f) => ({ ...f, pin: e.target.value.replace(/\D/g, "") }))}
@@ -220,14 +218,14 @@ export function RegisterWorkerForm({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPin">Confirm PIN</Label>
+                <Label htmlFor="confirmPin">{t("join.confirmPin")}</Label>
                 <div className="relative">
                   <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="confirmPin"
                     type="password"
                     inputMode="numeric"
-                    placeholder="4-6 digits"
+                    placeholder={t("join.pinPlaceholder")}
                     className="pl-9"
                     value={form.confirmPin}
                     onChange={(e) => setForm((f) => ({ ...f, confirmPin: e.target.value.replace(/\D/g, "") }))}
@@ -245,13 +243,13 @@ export function RegisterWorkerForm({
               className="bg-gradient-brand w-full text-white hover:opacity-95"
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Submit registration
+              {t("join.submitRegistration")}
             </Button>
           </form>
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Already registered and approved?{" "}
+            {t("join.alreadyRegistered")}{" "}
             <Link href={`/join/${code}/login`} className="font-medium text-foreground underline underline-offset-2">
-              Sign in
+              {t("common.signIn")}
             </Link>
           </p>
         </CardContent>

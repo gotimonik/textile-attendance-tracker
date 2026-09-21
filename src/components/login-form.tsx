@@ -17,8 +17,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function LoginForm() {
+  const { t } = useTranslation();
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
@@ -38,16 +40,16 @@ export function LoginForm() {
       });
 
       if (res?.error) {
-        toast.error("Invalid username or password");
+        toast.error(t("auth.invalidCredentials"));
         setLoading(false);
         return;
       }
 
-      toast.success("Welcome back!");
+      toast.success(t("auth.welcomeBack"));
       router.push(callbackUrl);
       router.refresh();
     } catch {
-      toast.error("Something went wrong. Please try again.");
+      toast.error(t("auth.genericError"));
       setLoading(false);
     }
   }
@@ -68,13 +70,13 @@ export function LoginForm() {
 
       <Card className="glass-card shadow-glow border-none py-0 shadow-xl">
         <CardHeader className="pt-8">
-          <CardTitle className="font-heading text-2xl">Welcome back</CardTitle>
-          <CardDescription>Sign in to manage today&apos;s attendance</CardDescription>
+          <CardTitle className="font-heading text-2xl">{t("auth.loginTitle")}</CardTitle>
+          <CardDescription>{t("auth.loginSubtitle")}</CardDescription>
         </CardHeader>
         <CardContent className="pb-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">{t("auth.username")}</Label>
               <div className="relative">
                 <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -89,7 +91,7 @@ export function LoginForm() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.password")}</Label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -109,17 +111,17 @@ export function LoginForm() {
               disabled={loading}
               className="bg-gradient-brand w-full text-white transition-transform hover:scale-[1.01] hover:opacity-95 active:scale-[0.99]"
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign in"}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("common.signIn")}
             </Button>
           </form>
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Default demo login: <span className="font-medium text-foreground">admin</span> /{" "}
+            {t("auth.demoLoginPrefix")} <span className="font-medium text-foreground">admin</span> /{" "}
             <span className="font-medium text-foreground">admin123</span>
           </p>
           <p className="mt-3 text-center text-sm text-muted-foreground">
-            New unit?{" "}
+            {t("auth.newUnitPrompt")}{" "}
             <Link href="/signup" className="font-medium text-foreground underline underline-offset-2">
-              Create a workspace
+              {t("auth.createWorkspace")}
             </Link>
           </p>
         </CardContent>

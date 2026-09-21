@@ -4,45 +4,55 @@ import {
   Users,
   Building2,
   FileBarChart,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
 export type NavItem = {
   href: string;
-  label: string;
+  // Dictionary keys (under the "nav" namespace) — resolved with useTranslation()
+  // at render time in SidebarNav/MobileNav, not literal display text, so the
+  // sidebar follows whatever language the signed-in admin has chosen.
+  labelKey: string;
+  descriptionKey: string;
   icon: LucideIcon;
-  description: string;
 };
 
 export const NAV_ITEMS: NavItem[] = [
   {
     href: "/",
-    label: "Dashboard",
+    labelKey: "nav.dashboard",
+    descriptionKey: "nav.dashboardDesc",
     icon: LayoutDashboard,
-    description: "Today's overview",
   },
   {
     href: "/attendance",
-    label: "Attendance",
+    labelKey: "nav.attendance",
+    descriptionKey: "nav.attendanceDesc",
     icon: CalendarCheck2,
-    description: "Mark daily attendance",
   },
   {
     href: "/workers",
-    label: "Workers",
+    labelKey: "nav.workers",
+    descriptionKey: "nav.workersDesc",
     icon: Users,
-    description: "Manage your workforce",
   },
   {
     href: "/departments",
-    label: "Departments",
+    labelKey: "nav.departments",
+    descriptionKey: "nav.departmentsDesc",
     icon: Building2,
-    description: "Organize by department",
   },
   {
     href: "/reports",
-    label: "Reports",
+    labelKey: "nav.reports",
+    descriptionKey: "nav.reportsDesc",
     icon: FileBarChart,
-    description: "History & export",
+  },
+  {
+    href: "/salary",
+    labelKey: "nav.salary",
+    descriptionKey: "nav.salaryDesc",
+    icon: Wallet,
   },
 ];

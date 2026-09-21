@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { DepartmentRow } from "@/components/departments/departments-view";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 type DialogState = { mode: "create" } | { mode: "edit"; department: DepartmentRow } | null;
 
@@ -26,6 +27,7 @@ export function DepartmentDialog({
   state: DialogState;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -50,16 +52,16 @@ export function DepartmentDialog({
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.error || "Something went wrong");
+        toast.error(data.error || t("common.genericError"));
         setLoading(false);
         return;
       }
 
-      toast.success(isEdit ? "Department updated" : "Department created");
+      toast.success(isEdit ? t("departments.successUpdate") : t("departments.successCreate"));
       onOpenChange(false);
       router.refresh();
     } catch {
-      toast.error("Network error — please try again");
+      toast.error(t("common.networkError"));
     } finally {
       setLoading(false);
     }
@@ -71,19 +73,17 @@ export function DepartmentDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="font-heading">
-              {state?.mode === "edit" ? "Edit department" : "Add department"}
+              {state?.mode === "edit" ? t("departments.dialogEditTitle") : t("departments.dialogAddTitle")}
             </DialogTitle>
             <DialogDescription>
-              {state?.mode === "edit"
-                ? "Update this department's name."
-                : "Create a new department to group your workers."}
+              {state?.mode === "edit" ? t("departments.dialogEditDesc") : t("departments.dialogAddDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-4">
-            <Label htmlFor="dept-name">Department name</Label>
+            <Label htmlFor="dept-name">{t("departments.nameLabel")}</Label>
             <Input
               id="dept-name"
-              placeholder="e.g. Embroidery"
+              placeholder={t("departments.namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoFocus
@@ -92,11 +92,11 @@ export function DepartmentDialog({
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={loading} className="bg-gradient-brand text-white">
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {state?.mode === "edit" ? "Save changes" : "Create department"}
+              {state?.mode === "edit" ? t("departments.saveChanges") : t("departments.createBtn")}
             </Button>
           </DialogFooter>
         </form>

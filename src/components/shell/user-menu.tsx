@@ -11,8 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function UserMenu() {
+  const { t } = useTranslation();
   const { data: session } = useSession();
   const name = session?.user?.name || session?.user?.username || "Admin";
   const organizationName = session?.user?.organizationName;
@@ -47,7 +49,7 @@ export function UserMenu() {
           onClick={() => signOut({ callbackUrl: "/login" })}
         >
           <LogOut className="h-4 w-4" />
-          Sign out
+          {t("common.signOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { dateKeyToUTC, todayKey, utcToDateKey, addDaysToKey } from "@/lib/date";
 import { STATUS_LABELS } from "@/lib/colors";
 import { getOrgSession } from "@/lib/session";
+import { VERIFIED_ATTENDANCE_WHERE } from "@/lib/attendance-filter";
 
 function csvEscape(value: string): string {
   if (/[",\n]/.test(value)) {
@@ -29,6 +30,7 @@ export async function GET(request: NextRequest) {
       organizationId: org.organizationId,
       date: { gte: fromDate, lte: toDate },
       ...(departmentId ? { worker: { departmentId } } : {}),
+      ...VERIFIED_ATTENDANCE_WHERE,
     },
     include: { worker: { include: { department: true } } },
     orderBy: [{ date: "asc" }, { worker: { name: "asc" } }],

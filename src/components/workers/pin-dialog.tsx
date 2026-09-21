@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { WorkerRow } from "@/components/workers/workers-view";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function PinDialog({
   worker,
@@ -24,6 +25,7 @@ export function PinDialog({
   worker: WorkerRow | null;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
@@ -48,14 +50,14 @@ export function PinDialog({
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Something went wrong");
+        toast.error(data.error || t("common.genericError"));
         return;
       }
-      toast.success(newPin ? "Login PIN set" : "Login PIN removed");
+      toast.success(newPin ? t("workers.pinSetSuccess") : t("workers.pinRemoveSuccess"));
       onOpenChange(false);
       router.refresh();
     } catch {
-      toast.error("Network error — please try again");
+      toast.error(t("common.networkError"));
     } finally {
       setLoading(false);
       setClearing(false);
@@ -65,11 +67,11 @@ export function PinDialog({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!/^\d{4,6}$/.test(pin)) {
-      toast.error("PIN must be 4 to 6 digits");
+      toast.error(t("workers.pinErrLength"));
       return;
     }
     if (pin !== confirmPin) {
-      toast.error("PINs don't match");
+      toast.error(t("workers.pinErrMismatch"));
       return;
     }
     submitPin(pin);
@@ -83,21 +85,21 @@ export function PinDialog({
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle className="font-heading">
-              {worker?.hasPin ? "Reset login PIN" : "Set login PIN"}
+              {worker?.hasPin ? t("workers.pinResetTitle") : t("workers.pinSetTitle")}
             </DialogTitle>
             <DialogDescription>
-              {worker?.name} will sign in at the worker portal using their phone number and this PIN.
+              {t("workers.pinDialogDesc", { name: worker?.name ?? "" })}
             </DialogDescription>
           </DialogHeader>
 
           {needsPhone ? (
             <p className="py-4 text-sm text-muted-foreground">
-              Add a phone number for this worker first — it&apos;s required to enable login.
+              {t("workers.pinNeedsPhone")}
             </p>
           ) : (
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="new-pin">New PIN</Label>
+                <Label htmlFor="new-pin">{t("workers.newPin")}</Label>
                 <div className="relative">
                   <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -116,7 +118,7 @@ export function PinDialog({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm-pin">Confirm PIN</Label>
+                <Label htmlFor="confirm-pin">{t("workers.confirmPin")}</Label>
                 <div className="relative">
                   <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -149,16 +151,16 @@ export function PinDialog({
                 }}
               >
                 {clearing && <Loader2 className="h-4 w-4 animate-spin" />}
-                Remove login
+                {t("workers.removeLogin")}
               </Button>
             )}
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             {!needsPhone && (
               <Button type="submit" disabled={loading} className="bg-gradient-brand text-white">
                 {loading && !clearing && <Loader2 className="h-4 w-4 animate-spin" />}
-                Save PIN
+                {t("workers.savePin")}
               </Button>
             )}
           </DialogFooter>
